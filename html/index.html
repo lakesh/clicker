@@ -1,0 +1,149 @@
+<html>
+<head>
+  <title>Clicker</title>
+  <script src="js/socket.io.js"></script>
+	<script src="js/jquery-1.8.2.min.js"></script>  
+  <script src="js/d3.v2.js"></script>
+	<script src="js/line-graph.js"></script>
+	<link rel="stylesheet" href="css/style.css" type="text/css">
+
+	<style>
+		body {
+			font-family: "Helvetica Neue", Helvetica;
+			padding:0px;
+			
+		}
+
+		p {
+			clear:both;
+			top: 20px;
+		}		
+
+		div.aGraph {
+			margin-bottom: 30px;
+		}
+		
+		.main {
+			background-color:white;
+			width:800px;
+			border:none;
+		}	
+		
+		.vote {
+			margin:50px;
+		}
+		
+		.header {
+			float:left;
+			margin-left:10px;
+			margin-top:20px;
+		}
+		
+		.banner {
+			background-color:#e6e3d7;
+		}
+		
+		input.positive {
+			background-image: url(/images/thumbs_up.png); /* 16px x 16px */
+			background-color: transparent;
+			background-repeat: no-repeat;
+			border: none;		
+			width:100px;
+			height:100px;
+			cursor: pointer;
+		}
+		
+		input.negative {
+			background-image: url(/images/thumbs_down.png); /* 16px x 16px */
+			background-color: transparent;
+			background-repeat: no-repeat;
+			border: none;		
+			width:64px;
+			height:64px;
+			cursor: pointer;
+		}
+	</style>
+	
+  <script type="text/javascript">
+		$(document).ready(function() {
+			$('.positive').click(function() {
+				$.ajax({
+          url: 'http://localhost:8080/feedback.html',
+          type: 'POST',
+          data: '{"feedback":"1"}',
+          success: function (result) {
+          	alert("Thanks");
+          }
+        });
+			});
+			
+			$('.negative').click(function() {
+				$.ajax({
+          url: 'http://localhost:8080/feedback.html',
+          type: 'POST',
+          data: '{"feedback":"0"}',
+          success: function (result) {
+          	alert("Thanks");
+          }
+        });
+			});
+			
+		 	
+		 	
+			var socket = io.connect('http://localhost:8080'); 
+			var data;
+			var l1;
+			socket.on('initial', function (stats) {
+				data = stats.stats;
+				l1 = new LineGraph({containerId: 'graph1', data: data});
+			});
+
+			/* 
+		 * If running inside bl.ocks.org we want to resize the iframe to fit both graphs
+		 */
+		 if(parent.document.getElementsByTagName("iframe")[0]) {
+			 parent.document.getElementsByTagName("iframe")[0].setAttribute('style', 'height: 650px !important');
+		 }
+
+
+
+		 // create graph now that we've added presentation config
+
+		
+		setInterval(function() {
+			
+		}, 1000);
+	
+			
+		});
+	</script>
+	
+</head>
+
+<body bgcolor="#a52e42">
+	<div align="center">
+		<div class="main">
+			<div class="banner">
+				<img style="float:left" src="images/temple_logo.png" width="120px"/>
+				<div class="header"><h2>Welcome to the clicker app</h2></div>
+				<div style="clear:left"></div>
+				<hr/>
+			</div>
+
+			<div class="vote">
+				<div>
+					<input type="button" value=" " class="positive"/>
+					<input type="button" value=" " class="negative"/>
+				</div>
+				Keep voting !!!!!
+			</div>
+			<hr/>
+			
+			<h2> Real time stats </h2>(What others think about it)
+			<div id="graph1" class="aGraph" style="position:relative;width:75%;height:300px"></div>
+		</div>
+	</div>
+
+</body>
+
+</html>
