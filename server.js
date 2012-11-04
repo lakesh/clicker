@@ -10,7 +10,7 @@ var path = require('path');
     	
 var mongodb = require('mongodb');
 var async = require('async');
-var server = new mongodb.Server('localhost',27017, {auto_reconnect: true});
+var server = new mongodb.Server('localhost',27017, {auto_reconnect: true}, {safe:true});
 var db = new mongodb.Db('clicker', server);
 
 // create http server
@@ -91,7 +91,7 @@ io.sockets.on('connection', function (socket) {
 	var positives = new Array();
 	var negatives = new Array();
 	
-	var server1 = new mongodb.Server('localhost',27017, {auto_reconnect: true});
+	var server1 = new mongodb.Server('localhost',27017, {auto_reconnect: true}, {safe:true});
 	var db1 = new mongodb.Db('clicker', server1);	
 	
 	db1.open(function(err, db) {
@@ -156,7 +156,8 @@ io.sockets.on('connection', function (socket) {
 					}
 					
 					console.log(values);
-					var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[values]};
+					var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[[5,7,4,8,3,9,19,25,2,36]]};
+					db1.close();
 					socket.emit('initial', { stats: stats }); 
 				});
 			});
@@ -168,6 +169,82 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('update', function (data) {
+		console.log('Update request received');
+		var currentTime = new Date().getTime();
+		var server = new mongodb.Server('localhost',27017, {auto_reconnect: true}, {safe:true} );
+		var db = new mongodb.Db('clicker', server);	
+		var values = new Array();
+		
+		db.open(function(err, db) {
+			if(!err) {
+				db.collection('feedback', function(err, collection) {
+					var queries = [];
+					var END = 1;
+					// Build up queries:
+					for (var i=0;i <1; i++) {
+						queries.push((function(j){
+							return function(callback) {
+								collection.find(
+									{value:1},
+									{created_on: 
+										{       
+											$gte:currentTime + (j*60*1000 - 30*1000),
+											$lt: currentTime + (j*60*1000 + 30*1000)
+										}
+									},
+									function(err_positive, result_positive) {
+										result_positive.count(function(err, count){
+											console.log("Total matches: " + count);
+											positives[j] = count;          
+											callback();
+										});
+									}
+					
+								);
+							}
+						})(i));
+						
+						queries.push((function(j){
+							return function(callback) {
+								collection.find(
+									{value:0},
+									{created_on: 
+										{
+											$gte:startTime + (j*60*1000 - 30*1000),
+											$lt: startTime + (j*60*1000 + 30*1000)
+										}
+									},
+									function(err_negative, result_negative) {
+										result_negative.count(function(err, count){
+											console.log("Total matches: " + count);
+											negatives[j] = count;
+											callback();
+										});
+									}   
+								);
+							}
+						})(i));  
+					}
+					
+					// Now execute the queries:
+					async.parallel(queries, function(){
+						// This function executes after all the queries have returned
+						// So we have access to the completed positives and negatives:
+					
+						// For example, we can dump the arrays in Firebug:
+						for (var i=0;i <END; i++) {
+							values[i] = positives[i] - negatives[i];
+						}
+						
+						console.log(values);
+						db.close();
+						socket.emit('newstats', { stats: values }); 
+					});
+						
+				});		
+
+			}
+		});
 		
 	}); 
 });
