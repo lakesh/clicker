@@ -9,6 +9,7 @@ var path = require('path');
 
     	
 var mongodb = require('mongodb');
+var async = require('async');
 var server = new mongodb.Server('localhost',27017, {auto_reconnect: true});
 var db = new mongodb.Db('clicker', server);
 
@@ -86,7 +87,7 @@ io.sockets.on('connection', function (socket) {
 	var currentTime = new Date().getTime();
 	var startTime = currentTime - (10*60*1000);
 	step = 60000;
-	var values = [];
+	var values = new Array();
 	var positives = new Array();
 	var negatives = new Array();
 	
@@ -97,41 +98,67 @@ io.sockets.on('connection', function (socket) {
 		if(!err) {
 
 			db1.collection('feedback', function(err, collection) {
-				for (var i=0;i <10; i++) {
-					collection.find(
-						{value:1},
-						{created_on: 
-							{		
-								$gte:startTime + (i*60*1000 - 30*1000),
-								$lt: startTime + (i*60*1000 + 30*1000)
-							}
-						},
-						function(err_positive, result_positive) {
-							result_positive.count(function(err, count){
-									console.log("Total matches: " + count);
-									positives[i] = count;
-							});
+				var queries = [];
+				var END = 10;
+				// Build up queries:
+				for (var i=0;i <END; i++) {
+					queries.push((function(j){
+						return function(callback) {
+							collection.find(
+								{value:1},
+								{created_on: 
+									{       
+										$gte:startTime + (j*60*1000 - 30*1000),
+										$lt: startTime + (j*60*1000 + 30*1000)
+									}
+								},
+								function(err_positive, result_positive) {
+									result_positive.count(function(err, count){
+										console.log("Total matches: " + count);
+										positives[j] = count;          
+										callback();
+									});
+								}
+				
+							);
 						}
-						
-					);				
-
-					collection.find(
-						{value:0},
-						{created_on: 
-							{
-								$gte:startTime + (i*60*1000 - 30*1000),
-								$lt: startTime + (i*60*1000 + 30*1000)
-							}
-						},
-						function(err_negative, result_negative) {
-							result_negative.count(function(err, count){
-									console.log("Total matches: " + count);
-									negatives[i] = count;
-							});
-						}	
-					);									
+					})(i));
+					queries.push((function(j){
+						return function(callback) {
+							collection.find(
+								{value:0},
+								{created_on: 
+									{
+										$gte:startTime + (j*60*1000 - 30*1000),
+										$lt: startTime + (j*60*1000 + 30*1000)
+									}
+								},
+								function(err_negative, result_negative) {
+									result_negative.count(function(err, count){
+										console.log("Total matches: " + count);
+										negatives[j] = count;
+										callback();
+									});
+								}   
+							);
+						}
+					})(i));  
 				}
-
+				
+				// Now execute the queries:
+				async.parallel(queries, function(){
+					// This function executes after all the queries have returned
+					// So we have access to the completed positives and negatives:
+				
+					// For example, we can dump the arrays in Firebug:
+					for (var i=0;i <END; i++) {
+						values[i] = positives[i] - negatives[i];
+					}
+					
+					console.log(values);
+					var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[values]};
+					socket.emit('initial', { stats: stats }); 
+				});
 			});
 
 		} else {
@@ -140,9 +167,7 @@ io.sockets.on('connection', function (socket) {
 	
 	});
 
-	var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[[5, 4, 6, 3, 7, 2, 15, 20, 25, 35]]};
-	socket.emit('initial', { stats: stats }); 
-	socket.on('echo', function (data) {
+	socket.on('update', function (data) {
 		
 	}); 
 });
