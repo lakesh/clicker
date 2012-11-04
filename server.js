@@ -85,7 +85,7 @@ var io = require('socket.io').listen(app);
 io.sockets.on('connection', function (socket) {
 	var currentTime = new Date().getTime();
 	var startTime = currentTime - (10*60*1000);
-	step = 120000;
+	step = 60000;
 	var values = [];
 	var positives = new Array();
 	var negatives = new Array();
@@ -140,7 +140,7 @@ io.sockets.on('connection', function (socket) {
 	
 	});
 
-	var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[[5, 4, 6, 3, 7, 2]]};
+	var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[[5, 4, 6, 3, 7, 2, 15, 20, 25, 35]]};
 	socket.emit('initial', { stats: stats }); 
 	socket.on('echo', function (data) {
 		
