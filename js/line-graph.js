@@ -46,6 +46,7 @@ function LineGraph(argsMap) {
 	this.slideData = function(newData) {
 		// validate data
 		var tempData = processDataMap(newData);
+
 		debug("Existing startTime: " + data.startTime + "  endTime: " + data.endTime);
 		debug("New startTime: " + tempData.startTime + "  endTime: " + tempData.endTime);
 		
@@ -53,15 +54,18 @@ function LineGraph(argsMap) {
 		if(tempData.step != newData.step) {
 			throw new Error("The step size on appended data must be the same as the existing data => " + data.step + " != " + tempData.step);
 		}
-
+		
 		if(tempData.values[0].length == 0) {
 			throw new Error("There is no data to append.");
 		}
-		
+
 		var numSteps = tempData.values[0].length;
+		
 		console.log("slide => add num new values: " + numSteps);
 		console.log(tempData.values[0])
+
 		tempData.values.forEach(function(dataArrays, i) {
+
 			var existingDataArrayForIndex = data.values[i];
 			dataArrays.forEach(function(v) {
 				console.log("slide => add new value: " + v);
@@ -71,7 +75,7 @@ function LineGraph(argsMap) {
 				existingDataArrayForIndex.shift();
 			})
 		})
-		
+
 		// shift domain by number of data elements we just added
 		// == numElements * step
 		data.startTime = new Date(data.startTime.getTime() + (data.step * numSteps));
@@ -298,7 +302,6 @@ function LineGraph(argsMap) {
 			maxValues[i] = d3.max(newDataValues[i])
 		})
 
-		
 
 		
 		return {

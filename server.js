@@ -81,12 +81,66 @@ function handler (req, res) {
 }
 var io = require('socket.io').listen(app);
 
+
 io.sockets.on('connection', function (socket) {
 	var currentTime = new Date().getTime();
-	var startTime = currentTime - (5*60*1000);
-	step = 30*1000;
+	var startTime = currentTime - (10*60*1000);
+	step = 120000;
+	var values = [];
+	var positives = new Array();
+	var negatives = new Array();
 	
-	var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[[1, 2, 3, 4, 3, 4, 5, 8, 2, 3, 4, 1]]};
+	var server1 = new mongodb.Server('localhost',27017, {auto_reconnect: true});
+	var db1 = new mongodb.Db('clicker', server1);	
+	
+	db1.open(function(err, db) {
+		if(!err) {
+
+			db1.collection('feedback', function(err, collection) {
+				for (var i=0;i <10; i++) {
+					collection.find(
+						{value:1},
+						{created_on: 
+							{		
+								$gte:startTime + (i*60*1000 - 30*1000),
+								$lt: startTime + (i*60*1000 + 30*1000)
+							}
+						},
+						function(err_positive, result_positive) {
+							result_positive.count(function(err, count){
+									console.log("Total matches: " + count);
+									positives[i] = count;
+							});
+						}
+						
+					);				
+
+					collection.find(
+						{value:0},
+						{created_on: 
+							{
+								$gte:startTime + (i*60*1000 - 30*1000),
+								$lt: startTime + (i*60*1000 + 30*1000)
+							}
+						},
+						function(err_negative, result_negative) {
+							result_negative.count(function(err, count){
+									console.log("Total matches: " + count);
+									negatives[i] = count;
+							});
+						}	
+					);									
+				}
+
+			});
+
+		} else {
+			console.log('Error connecting to the database');
+		}      
+	
+	});
+
+	var stats = {"start":startTime,"end":currentTime,"step":step,"names":["Stats"],"values":[[5, 4, 6, 3, 7, 2]]};
 	socket.emit('initial', { stats: stats }); 
 	socket.on('echo', function (data) {
 		

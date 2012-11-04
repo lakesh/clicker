@@ -91,7 +91,7 @@
 		 	
 		 	
 			var socket = io.connect('http://localhost:8080'); 
-			var data;
+			var data = {};
 			var l1;
 			socket.on('initial', function (stats) {
 				data = stats.stats;
@@ -106,13 +106,21 @@
 		 }
 
 
-
-		 // create graph now that we've added presentation config
-
+		var dataA = {"start":1336681080000,"end":1336681080000,"step":120000,"names":["Stats"],"values":[[15625.6826207297],[411.161376855185]]};
 		
+		 // create graph now that we've added presentation config
 		setInterval(function() {
-			
-		}, 1000);
+			var newData = [];
+			var v = data.values[0].shift();
+			data.values[0].push(v);
+			newData[0] = [v];
+			// increment time 1 step
+			dataA.values = newData;
+			dataA.start = data.start + data.step;
+			dataA.end = data.end + data.step; 
+			l1.slideData(dataA);
+
+		}, 2000);
 	
 			
 		});
