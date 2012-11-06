@@ -72,7 +72,6 @@
           type: 'POST',
           data: '{"feedback":"1"}',
           success: function (result) {
-          	alert("Thanks");
           }
         });
 			});
@@ -83,7 +82,6 @@
           type: 'POST',
           data: '{"feedback":"0"}',
           success: function (result) {
-          	alert("Thanks");
           }
         });
 			});
@@ -126,9 +124,9 @@
 				// take the first value and move it to the end
 				// and capture the value we're moving so we can send it to the graph as an update
 				dataSeries.shift();
-				dataSeries.push(10);
+				dataSeries.push(stats.stats[0]);
 				// put this value in newData as an array with 1 value
-				newData[index] = [10];
+				newData[index] = [stats.stats[0]];
 			})
 
 			// we will reuse dataA each time

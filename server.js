@@ -10,8 +10,7 @@ var path = require('path');
     	
 var mongodb = require('mongodb');
 var async = require('async');
-var server = new mongodb.Server('localhost',27017, {auto_reconnect: true}, {safe:true});
-var db = new mongodb.Db('clicker', server);
+
 
 // create http server
 var app = http.createServer(handler);
@@ -29,6 +28,9 @@ function handler (req, res) {
     	obj = JSON.parse(body);
     	console.log(obj.feedback);
 
+			var server = new mongodb.Server('localhost',27017, {auto_reconnect: true}, {safe:true});
+			var db = new mongodb.Db('clicker', server);
+			
       db.open(function(err, db) {
 				if(!err) {
 					db.collection('feedback', function(err, collection) {
@@ -185,8 +187,8 @@ io.sockets.on('connection', function (socket) {
 						queries.push((function(j){
 							return function(callback) {
 								collection.find(
-									{value:1},
-									{created_on: 
+									{value:"1"},
+									{datetime: 
 										{       
 											$gte:currentTime + (j*60*1000 - 30*1000),
 											$lt: currentTime + (j*60*1000 + 30*1000)
@@ -207,8 +209,8 @@ io.sockets.on('connection', function (socket) {
 						queries.push((function(j){
 							return function(callback) {
 								collection.find(
-									{value:0},
-									{created_on: 
+									{value:"0"},
+									{datetime: 
 										{
 											$gte:startTime + (j*60*1000 - 30*1000),
 											$lt: startTime + (j*60*1000 + 30*1000)
